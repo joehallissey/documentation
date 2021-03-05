@@ -83,7 +83,7 @@ If you build or maintain WordPress and Drupal sites, Autopilot is for you.
 
 Site upkeep can be tedious with constant monitoring, building, maintaining websites, and working cross-functionally to deliver digital experiences for customers. Autopilot relieves you of the continual maintenance work it takes to keep sites updated.
 
-Autopilot requires Multidev, and is available to Pantheon accounts with [Gold support](/support#support-features-and-response-times) or higher.
+Autopilot requires Multidev, and is available to Pantheon [Gold Accounts](/support#support-features-and-response-times) or higher.
 
 ### Is Autopilot configurable per site?
 
