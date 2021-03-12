@@ -18,40 +18,56 @@ The goals of this upgrade are to remove dependencies that Composer will manage f
 
 Note that since you are migrating a site through this process, the new site will no longer maintain your existing commit history.
 
-## Before You Begin
+<Alert title="Note" type="info">
 
-This guide uses the local command line environment, and there are several commands dependent on the site name. To make this easier, set the temporary variable `$SITE` in your terminal session to match the site name:
+To maintain best practice and to avoid difficult, time-consuming repairs to the site, this doc is written for users with access to Pantheon's [Multidev](/multidev) feature.
 
-  ```bash{promptUser:user}
-  export SITE=anita-drupal
-  ```
+Pantheon support is not available to users who avoid the Multidev steps.
 
-  <Accordion title="How to Use Terminus to Find the Site Name" id="site-name" icon="info-sign">
+</Alert>
 
-  Use `terminus site:list` for a list of sites you have access to:
+## Prepare the Local Environment
 
-   ```bash{outputLines:2-6}
-   terminus site:list
-   --------------------------- --------------------- ------------- ------------------- ---------------- -------------------- --------------------- ------------- ------------
-   Name                        ID                    Plan          Framework           Region           Owner                Created               Memberships   Is Frozen?
-   --------------------------- --------------------- ------------- ------------------- ---------------- -------------------- --------------------- ------------- ------------
-   anita-drupal                abdc80ce-286c-1234-   Sandbox       drupal8             Canada           3374708c-987e-1234   2020-12-15 19:40:42   d3ecc20c-395a false
-   anita-wordpres              abdc9954-fab2-1234-   Sandbox       wordpress           United States    c96ddb25-336a-1234   2020-09-02 07:18:51   d3ecc20c-395a false
+1. Review our documentation on [Git](/git), [Composer](/composer), and [Terminus](/terminus), and have them installed and configured on your local computer. Pantheon requires Composer 2 at minimum.
+
+   - Mac users can use [Homebrew](https://brew.sh/) to install both Git and Composer, along with their required dependencies:
+
+    ```bash{promptUser:user}
+    brew install git composer
+    ```
+
+   - Windows users can install [Composer](https://getcomposer.org/doc/00-intro.md#installation-windows) and [Git](https://git-scm.com/download/win), and may need to install [XAMPP](https://www.apachefriends.org/index.html) or similar to satisfy some dependencies.
+
+1. [Clone](/git#clone-your-site-codebase) your current Pantheon site repository to a working directory on your local computer.
+
+1. This guide uses several commands that depend on the site name in the local command line environment. To make this easier, set the temporary variable `$SITE` in your terminal session to match the site name:
+
+   ```bash{promptUser:user}
+   export SITE=anita-drupal
    ```
 
-   The site name is listed under `Name`. In this example, `anita-drupal`.
+   <Accordion title="How to Use Terminus to Find the Site Name" id="site-name" icon="info-sign">
 
-  </Accordion>
+   Use `terminus site:list` for a list of sites you have access to:
+
+    ```bash{outputLines:2-6}
+    terminus site:list
+    --------------------------- --------------------- ------------- ------------------- ---------------- -------------------- --------------------- ------------- ------------
+    Name                        ID                    Plan          Framework           Region           Owner                Created               Memberships   Is Frozen?
+    --------------------------- --------------------- ------------- ------------------- ---------------- -------------------- --------------------- ------------- ------------
+    anita-drupal                abdc80ce-286c-1234-   Sandbox       drupal8             Canada           3374708c-987e-1234   2020-12-15 19:40:42   d3ecc20c-395a false
+    anita-wordpres              abdc9954-fab2-1234-   Sandbox       wordpress           United States    c96ddb25-336a-1234   2020-09-02 07:18:51   d3ecc20c-395a false
+    ```
+
+    The site name is listed under `Name`. In this example, `anita-drupal`.
+
+   </Accordion>
 
 ## Will This Guide Work for Your Site?
 
 You might encounter significant issues if the site does not match these requirements.
 
-- No nested docroot.
-
-   - The process outlined in this guide will not work if the site repository has a `/web` folder at its root.
-
-   - See [Serving Sites from the Web Subdirectory](/nested-docroot) for information about nested docroots.
+Before you continue, confirm that your site meets the following:
 
 - The site has the [Pantheon drops-8 repo](https://github.com/pantheon-systems/drops-8) in its Upstream.
 
@@ -77,28 +93,30 @@ You might encounter significant issues if the site does not match these requirem
 
   </Accordion>
 
-## Prepare the Site and Environment
+- The site does not use a nested docroot.
 
-1. Review our documentation on [Git](/git), [Composer](/composer), and [Terminus](/terminus), and have them installed and configured on your local computer. Pantheon requires Composer 2 at minimum.
+   - The process outlined in this guide will not work if the site repository has a `/web` folder at its root.
 
-   - Mac users can use [Homebrew](https://brew.sh/) to install both Git and Composer, along with their required dependencies:
+   - See [Serving Sites from the Web Subdirectory](/nested-docroot) for information about nested docroots.
 
-    ```bash{promptUser:user}
-    brew install git composer
-    ```
+- The site does not use another package and library manager like [Ludwig](https://www.drupal.org/project/ludwig).
 
-1. [Clone](/git#clone-your-site-codebase) your current Pantheon site repository to a working directory on your local computer.
+## Apply All Available Upstream Updates
 
-1. [Update the site](/core-updates) to the latest [Pantheon Drops 8](https://github.com/pantheon-systems/drops-8) Upstream and apply all available updates.
+[Update the site](/core-updates) to the latest [Pantheon Drops 8](https://github.com/pantheon-systems/drops-8) Upstream and apply all available updates.
 
-   - Use Terminus to list all available updates:
+1. Use Terminus to list all available updates:
 
-    ```bash{outputLines:2}
-    terminus upstream:updates:list $SITE
-    [warning] There are no available updates for this site.
-    ```
+  ```bash{outputLines:2}
+  terminus upstream:updates:list $SITE
+  [warning] There are no available updates for this site.
+  ```
 
-    If any updates are available, apply them using the command line or via the [Pantheon Dashboard](/core-updates#apply-upstream-updates-via-the-site-dashboard) before continuing.
+1. If any updates are available, apply them using the command line or via the [Pantheon Dashboard](/core-updates#apply-upstream-updates-via-the-site-dashboard):
+
+  ```bash{promptUser: user}
+  terminus upstream:updates:apply $SITE.dev --updatedb
+  ```
 
 ## Add the Pantheon Integrated Composer Upstream in a New Local Branch
 
@@ -151,9 +169,15 @@ What makes your site code unique is your selection of contributed modules and th
 
 #### Modules and Themes
 
-A Composer-managed site should be able to include all custom code via Composer. Begin by reviewing your existing site's code. Check for contributed modules in `/modules`, `/modules/contrib`, `/sites/all/modules`, and `/sites/all/modules/contrib`.
+The goal of this process is to have Composer manage all the site's contrib modules, contrib themes, core upgrades, and libraries (we'll call this _contributed code_). The only things that should be migrated from the existing site are custom code, custom themes, and custom modules that are specific to the existing site.
 
-1. When reviewing the site, take stock of exactly what versions of modules and themes you depend on. One way to do this is to use a command like the following from within a contributed modules folder (e.g. `/modules`, `/themes`, `/themes/contrib`, `/sites/all/themes`, `/sites/all/themes/contrib`, etc.).
+The steps here ensure that any modules and themes from [drupal.org](drupal.org) are in the `composer.json` `require` list.
+
+Once Composer is aware of all the contributed code, you'll be able to run `composer upgrade` from within the directory to have Composer upgrade all the contributed code automatically.
+
+Begin by reviewing the existing site's code. Check for contributed modules in `/modules`, `/modules/contrib`, `/sites/all/modules`, and `/sites/all/modules/contrib`.
+
+1. When reviewing the site, take stock of exactly what versions of modules and themes you depend on. One way to do this is to change to run the `pm:projectinfo` Drush command from within a contributed modules folder (e.g. `/modules`, `/themes`, `/themes/contrib`, `/sites/all/themes`, `/sites/all/themes/contrib`, etc.).
 
   This command works on Drush 8. If you're using Drush 9, use `pm:list` or refer to [Drush Commands](https://drushcommands.com/drush-9x/pm/pm:projectinfo/):
 
@@ -163,15 +187,13 @@ A Composer-managed site should be able to include all custom code via Composer. 
 
   This will list each module followed by the version of that module that is installed.
 
-1. You can add these modules to your new codebase using Composer by running the following for each module in the `$SITE-composer` directory.
-
-  If you use the [Ludwig module](https://www.drupal.org/project/ludwig) do not add it since Composer will take over:
+1. You can add these modules to your new codebase using Composer by running the following for each module in the `$SITE-composer` directory:
 
   ```bash{promptUser:user}
   composer require drupal/MODULE_NAME:^VERSION
   ```
 
-  Where `MODULE_NAME` is the machine name of the module in question, and `VERSION` is the version of that module the site is currently using. Composer may pull in a newer version than what you specify, depending upon what versions are available. You can read more about the caret (`^`) [in the documentation for Composer](https://getcomposer.org/doc/articles/versions.md#caret-version-range-) itself.
+  Where `MODULE_NAME` is the machine name of the module in question, and `VERSION` is the version of that module the site is currently using. Composer may pull in a newer version than what you specify, depending upon what versions are available. You can read more about the caret (`^`) in the [Composer documentation](https://getcomposer.org/doc/articles/versions.md#caret-version-range-).
 
    - If you get the following error, the module listed in the error (or its dependencies) does not meet compatibility requirements:
 
@@ -180,11 +202,64 @@ A Composer-managed site should be able to include all custom code via Composer. 
    Could not find a version of package drupal/MODULE_NAME matching your minimum-stability (stable). Require it with an explicit version constraint allowing its desired stability.
    ```
 
-   If there is not a stable version you can switch to, you may need to adjust the `minimum-stability` setting of `composer.json` to a more relaxed value, such as `beta`, `alpha`, or even `dev`. You can read more about `minimum-stability` [in the documentation for Composer](https://getcomposer.org/doc/04-schema.md#minimum-stability) itself.
+   If there is no stable version you can switch to, you may need to adjust the `minimum-stability` setting of `composer.json` to a more relaxed value, such as `beta`, `alpha`, or even `dev`. You can read more about `minimum-stability` in the [Composer documentation](https://getcomposer.org/doc/04-schema.md#minimum-stability).
+
+**Trust a robot?**
+
+One of Pantheon's engineers got tired of doing this process by hand, so he trained some robots to identify modules and put them into `composer.json`.
+
+Robots are cool, but they're not perfect, so you should understand the goal of this process as well as the limitations of automating the process.
+
+<Accordion title="A script that can help add modules to composer.json" id="modules-script" icon="cogs">
+
+First, disclaimers:
+
+Pantheon support is not available for this script or anything that results from trying to use it.
+
+Proceed at your own risk. Automation is better when you understand what it's doing.
+
+- The script does not resolve `composer.json` version problems.
+
+  - If there's a version conflict when you run `composer install`, you will need to resolve the conflicts yourself.
+
+- The script does not check for Drupal 9 compatibility.
+
+  - Use the [Upgrade Status](https://drupal.org/project/upgrade_status) module to check for Drupal 9 compatibility.
+
+- The script does not resolve module stability.
+
+  - If you get the following error, the module listed in the error (or its dependencies) does not meet compatibility requirements:
+
+   ```none
+   [InvalidArgumentException]
+   Could not find a version of package drupal/MODULE_NAME matching your minimum-stability (stable). Require it with an explicit version constraint allowing its desired stability.
+   ```
+
+   If there is no stable version you can switch to, you may need to adjust the `minimum-stability` setting of `composer.json` to a more relaxed value, such as `beta`, `alpha`, or even `dev`. You can read more about `minimum-stability` in the [Composer documentation](https://getcomposer.org/doc/04-schema.md#minimum-stability).
+
+- The script does not resolve patches.
+
+  Many times a module will be "patched" or have a `.patch` file that fixes known issues before the fix is available in the downloaded version. This script does not attempt to resolve any patches.
+
+If you still want to try it:
+
+1. Say the following out loud: "Pantheon is not responsible for what I am about to do."
+
+1. Create a directory called `bin` within your repository and copy the `migrateModules.php` file from [GitHub](https://github.com/pantheon-upstreams/drupal-project/pull/8/files#diff-c68470275758ca395b98d53ed258b63519435d492dd51531c4cf372814c6593e) into that directory.
+
+1. To run the module migration script, `cd` to the root directory of the repository and run `bin/migrateModules.php`.
+
+1. To see which modules were added, run `git diff composer.json`.
+
+1. Remove the `composer.lock` file. Composer will create a new one with the modules you just added.
+
+1. Run `composer install` and resolve any remaining version conflicts.
+
+</Accordion>
 
 #### Libraries
 
-Libraries can be handled in the same way, but the specifics depend on how your library code was included in the source site. If you're using a library's API, you may have to do additional work to ensure that library functions properly.
+Libraries can be handled similarly to modules, but the specifics depend on how your library code was included in the source site. If you're using a library's API, you may have to do additional work to ensure that library functions properly.
 
 ### Custom Code
 
@@ -241,13 +316,11 @@ Locate the configuration files in the existing site and move them here. If they 
 
 ## Deploy
 
-You've now committed the code to the local branch. If the site has [Multidev](/multidev), you can deploy that branch directly to a new Multidev and test the site in the browser. If the site doesn't load properly, clear the cache. If there are any issues, utilize the site's logs via `terminus drush $SITE.composerify -- wd-show` to inspect the watchdog logs, or follow the directions in our documentation on [log collection](/logs).
+You've now committed the code to the local branch. Deploy that branch directly to a new Multidev and test the site in the browser. If the site doesn't load properly, clear the cache. If there are any issues, utilize the site's logs via `terminus drush $SITE.composerify -- wd-show` to inspect the watchdog logs, or follow the directions in our documentation on [log collection](/logs).
 
-### Deploy to a Multidev (optional)
+### Deploy to a Multidev
 
-Continue to [Deploy to Dev](#deploy-to-dev) if you don't have access to access to Multidev.
-
-If the site has Multidev, push the changes to a Multidev called `composerify` to safely test the site without affecting the Dev environment:
+Push the changes to a Multidev called `composerify` to safely test the site without affecting the Dev environment:
 
 ```bash{promptUser:user}
 git add .
