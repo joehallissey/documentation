@@ -49,6 +49,10 @@ Start by creating a new machine user in your Atlassian Cloud instance. This user
 
 4. Check the address used in the last step for an email from Atlassian. The username is provided here. Click the **Set my password** button and follow prompts to set the machine user's password.
 
+5. Once your account has beeen activated, click on the circle image in the top right corner, then click **Account Settings**. On the next page, click **security**, then **Create and manage API tokens**, about halfway down the page.
+
+6. On the next page, click **Create API Token** and choose a clear label, such as `Pantheon`. Your new API token will appear. Save it as securily as a password. This token will be used in place of your Jira password for the `jira_pass` value below.
+
 ## Securely Store User Credentials on Pantheon
 Next, we need to provide Pantheon with the credentials for our new machine user. We'll securely store these values in the [private path](/private-paths/#private-path-for-files) of Pantheon's filesystem.
 
